@@ -20,3 +20,6 @@ mysql-slow.log:
 
 mysql-slow.dump:
 	sudo mysqldumpslow /var/log/mysql/mysql-slow.log
+
+mysql-slow.digest:
+	sudo pt-query-digest /var/log/mysql/mysql-slow.log
