@@ -565,7 +565,7 @@ module Isuconquest
         json(
           userId: user.id,
           viewerId: json_params.fetch(:viewerId),
-          sessionId: sess.session_id,
+          sessionId: sess.fetch(:session_id),
           createdAt: request_at,
           updatedResources: UpdatedResources.new(request_at, user, user_device, init_cards, [init_deck], nil, login_bonuses, presents).as_json,
         )
@@ -609,7 +609,7 @@ module Isuconquest
 
           next json(
             viewerId: json_params[:viewerId],
-            sessionId: sess.session_id,
+            sessionId: sess.fetch(:session_id),
             updatedResources: UpdatedResources.new(request_at, user, nil, nil, nil, nil, nil, nil).as_json,
           )
         end
@@ -619,7 +619,7 @@ module Isuconquest
 
         json(
           viewerId: json_params[:viewerId],
-          sessionId: sess.session_id,
+          sessionId: sess.fetch(:session_id),
           updatedResources: UpdatedResources.new(request_at, user, nil, nil, nil, nil, login_bonuses, presents).as_json,
         )
       end
