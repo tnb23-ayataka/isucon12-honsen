@@ -433,7 +433,7 @@ module Isuconquest
         user_id_session = user_id_store.read(sess_id)
         expired_at_session = expired_at_store.read(sess_id)
 
-        raise HttpError.new(401, 'unauthorized user') if user_session.nil?
+        raise HttpError.new(401, 'unauthorized user') if user_id_session.nil?
 
         if user_id_session != user_id
           raise HttpError.new(403, 'forbidden')
@@ -608,8 +608,10 @@ module Isuconquest
         ################
         query = 'SELECT * FROM user_sessions WHERE user_id=?'
         user_session = db.xquery(query, json_params[:userId]).first
-        user_id_store.write(user_session.fetch(:session_id), nil)
-        expired_at_store.write(user_session.fetch(:session_id), nil)
+        if user_session != nil then
+          user_id_store.write(user_session.fetch(:session_id), nil)
+          expired_at_store.write(user_session.fetch(:session_id), nil)
+        end
         #query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         #db.xquery(query, request_at, json_params[:userId])
         ################
