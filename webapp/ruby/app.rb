@@ -627,7 +627,7 @@ module Isuconquest
           expired_at: request_at + 86400,
         )
 
-        user_id_store.write(sess.session_id, sess.id)
+        user_id_store.write(sess.session_id, sess.user_id)
         expired_at_store.write(sess.session_id, sess.expired_at)
         #query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
         #db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
