@@ -921,7 +921,7 @@ module Isuconquest
       end
 
       user_id_and_item_id_to_user_item = db.xquery(
-        "SELECT * FROM user_items WHERE user_id IN (${user_placeholder}) AND item_id IN (#{item_placeholder})",
+        "SELECT * FROM user_items WHERE user_id IN (#{user_placeholder}) AND item_id IN (#{item_placeholder})",
         *user_ids,
         *item_ids,
       ).map { UserItem.new(_1) }.group_by do |user_item|
