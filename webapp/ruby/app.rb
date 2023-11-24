@@ -349,24 +349,23 @@ module Isuconquest
       end
 
       def generate_id
-        return null
-        # db = Thread.current[:generate_id_db] ||= connect_db
-        # update_error = nil
-        # 100.times do
-        #   begin
-        #     db.query('UPDATE id_generator SET id=LAST_INSERT_ID(id+1)')
-        #   rescue Mysql2::Error => e
-        #     if e.error_number == 1213
-        #       update_error = e
-        #       next
-        #     end
-        #     raise e
-        #   end
+        db = Thread.current[:generate_id_db] ||= connect_db
+        update_error = nil
+        100.times do
+          begin
+            db.query('UPDATE id_generator SET id=LAST_INSERT_ID(id+1)')
+          rescue Mysql2::Error => e
+            if e.error_number == 1213
+              update_error = e
+              next
+            end
+            raise e
+          end
 
-        #   return db.last_id
-        # end
+          return db.last_id
+        end
 
-        # raise "failed to generate id: #{update_error.inspect}"
+        raise "failed to generate id: #{update_error.inspect}"
       end
 
       def generate_uuid
@@ -577,16 +576,18 @@ module Isuconquest
         session_id = generate_id()
         sess_id = generate_uuid()
         sess = Session.new(
-          id: session_id,
+          # id: session_id,
           user_id: json_params[:userId],
           session_id: sess_id,
           created_at: request_at,
           updated_at: request_at,
           expired_at: request_at + 86400,
         )
-        query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
-        db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
+        # query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
+        # db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
 
+        query = 'INSERT INTO user_sessions(user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?)'
+        db.xquery(query, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
         # すでにログインしているユーザはログイン処理をしない
         if complete_today_login?(user.last_activated_at, request_at)
           user.updated_at = request_at
