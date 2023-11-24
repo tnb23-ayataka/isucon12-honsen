@@ -9,8 +9,16 @@ require 'set'
 require 'sinatra/base'
 require 'sinatra/cookies'
 require 'sinatra/json'
+require 'ddtrace'
 
 require_relative './admin'
+
+Datadog.configure do |c|
+  c.tracing.instrument :sinatra, service_name: "freee.group:ayataka-12final-sinatra", analytics_enabled: true
+  c.tracing.instrument :mysql2,  service_name: "freee.group:ayataka-12final-mysql2",  analytics_enabled: true
+  c.env = 'prod'
+  c.version = '12.0.0'
+end
 
 module Isuconquest
 
@@ -142,8 +150,8 @@ module Isuconquest
       def complete_today_login?(last_activated_at_unixtime, request_at_unixtime)
         last_activated_at = Time.at(last_activated_at_unixtime, in: "+09:00")
         request_at = Time.at(request_at_unixtime, in: "+09:00")
-        last_activated_at.year == request_at.year && 
-          last_activated_at.month == request_at.month && 
+        last_activated_at.year == request_at.year &&
+          last_activated_at.month == request_at.month &&
           last_activated_at.day == request_at.day
       end
 
@@ -660,7 +668,7 @@ module Isuconquest
       gacha_id = params[:gacha_id]
       raise HttpError.new(403, 'invalid gachaID') if !gacha_id.is_a?(String) || gacha_id.empty?
 
-      
+
       gacha_count = begin
         Integer(params[:n], 10)
       rescue ArgumentError => e
@@ -751,7 +759,7 @@ module Isuconquest
       rescue ArgumentError
         raise HttpError.new(400, 'invalid index number (n) parameter')
       end
-      if n == 0 
+      if n == 0
         raise HttpError.new(400, 'index number (n) should be more than or equal to 1')
       end
 
@@ -794,7 +802,7 @@ module Isuconquest
       # user_presentsに入っているが未取得のプレゼント取得
       query = 'SELECT * FROM user_presents WHERE id IN (?) AND deleted_at IS NULL'
       obtain_present = db.xquery(query, json_params[:presentIds]).map { UserPresent.new(_1) }
-      
+
       if obtain_present.empty?
         next json(
           updatedResources: UpdatedResources.new(request_at, nil, nil, nil, nil, nil, nil, []).as_json,
