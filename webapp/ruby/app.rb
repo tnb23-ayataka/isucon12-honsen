@@ -589,7 +589,8 @@ module Isuconquest
 
       db_transaction do
         # sessionを更新
-        session_store.write(sess_id, nil)
+        sess_id = request.get_header('HTTP_X_SESSION')
+        session_store.write(sess_id, nil) if sess_id
 
         # session_id = generate_id()
         sess_id = generate_uuid()
