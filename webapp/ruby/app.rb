@@ -447,21 +447,22 @@ module Isuconquest
         end
 
 
-        if user_id_session == nil || expired_at_session == nil then
-          query = 'SELECT * FROM user_sessions WHERE session_id=? AND deleted_at IS NULL'
-          user_session = db.xquery(query, sess_id).first
-          raise HttpError.new(401, 'unauthorized user') if user_session.nil?
 
-          if user_session.fetch(:user_id) != user_id
-            raise HttpError.new(403, 'forbidden')
-          end
+        # if user_id_session == nil || expired_at_session == nil then
+        #   query = 'SELECT * FROM user_sessions WHERE session_id=? AND deleted_at IS NULL'
+        #   user_session = db.xquery(query, sess_id).first
+        #   raise HttpError.new(401, 'unauthorized user') if user_session.nil?
 
-          if user_session.fetch(:expired_at) < request_at
-            query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
-            db.xquery(query, request_at, sess_id)
-            raise HttpError.new(401, 'session expired')
-          end
-        end
+        #   if user_session.fetch(:user_id) != user_id
+        #     raise HttpError.new(403, 'forbidden')
+        #   end
+
+        #   if user_session.fetch(:expired_at) < request_at
+        #     query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
+        #     db.xquery(query, request_at, sess_id)
+        #     raise HttpError.new(401, 'session expired')
+        #   end
+        # end
       end
     end
 
@@ -604,7 +605,7 @@ module Isuconquest
       db_transaction do
         # sessionを更新
         ################
-        
+
         query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         db.xquery(query, request_at, json_params[:userId])
         ################
