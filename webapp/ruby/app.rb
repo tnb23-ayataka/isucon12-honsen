@@ -916,7 +916,7 @@ module Isuconquest
       item_ids = obtain_present.map(&:item_id).uniq
       placeholder = item_ids.map { '?' }.join(',')
       id_and_type_to_item = db.xquery(
-        "SELECT * FROM item_masters WHERE id IN (#{placeholder}) AND item_type IN (2, 3, 4)",
+        "SELECT * FROM item_masters WHERE id IN (#{placeholder})",
         *item_ids,
       ).group_by do |item|
         [item.fetch(:id), item.fetch(:item_type)]
