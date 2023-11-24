@@ -295,9 +295,7 @@ module Isuconquest
           item = db.xquery(query, item_id, item_type).first
           raise HttpError.new(404, 'not found item') unless item
 
-          user_card_id = generate_id()
-          card = UserCard.new(
-            id: user_card_id,
+          card_hash = {
             user_id:,
             card_id: item.fetch(:id),
             amount_per_sec: item.fetch(:amount_per_sec),
@@ -305,9 +303,12 @@ module Isuconquest
             total_exp: 0,
             created_at: request_at,
             updated_at: request_at,
-          )
-          query = 'INSERT INTO user_cards(id, user_id, card_id, amount_per_sec, level, total_exp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-          db.xquery(query, card.id, card.user_id, card.card_id, card.amount_per_sec, card.level, card.total_exp, card.created_at, card.updated_at)
+          }
+          query = 'INSERT INTO user_cards(user_id, card_id, amount_per_sec, level, total_exp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          db.xquery(query, *card_hash.values_at(:user_id, :card_id, :amount_per_sec, :level, :total_exp, :created_at, :updated_at))
+          user_card_id = db.last_id
+
+          card = UserCard.new(card_hash.merge(id: user_card_id))
 
           obtain_cards.push(card)
 
@@ -321,17 +322,19 @@ module Isuconquest
           user_item = db.xquery(query, user_id, item.fetch(:id)).first&.then { UserItem.new(_1) }
           if user_item.nil? # 新規作成
             user_item_id = generate_id()
-            user_item = UserItem.new(
-              id: user_item_id,
+            user_item_hash = {
               user_id: user_id,
               item_type: item.fetch(:item_type),
               item_id: item.fetch(:id),
               amount: obtain_amount,
               created_at: request_at,
               updated_at: request_at,
-            )
-            query = "INSERT INTO user_items(id, user_id, item_id, item_type, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-            db.xquery(query, user_item.id, user_id, user_item.item_id, user_item.item_type, user_item.amount, request_at, request_at)
+            }
+            query = "INSERT INTO user_items(user_id, item_id, item_type, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+            db.xquery(query, *user_item_hash.values_at(:user_id, :item_id, :item_type, :amount, :created_at, :updated_at))
+            user_item_id = db.last_id
+
+            user_item = UserItem.new(user_item_hash.merge(id: user_item_id))
           else # 更新
             user_item.amount += obtain_amount
             user_item.updated_at = request_at
