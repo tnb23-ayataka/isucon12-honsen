@@ -244,7 +244,6 @@ module Isuconquest
           next if user_present_all_received_history # プレゼント配布済
 
           # user present boxに入れる
-          user_present_id = generate_id()
           user_present_hash = {
             user_id: user_id,
             sent_at: request_at,
@@ -258,6 +257,7 @@ module Isuconquest
           query = 'INSERT INTO user_presents(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
           db.xquery(query, *user_present_hash.values_at(:user_id, :sent_at, :item_type, :item_id, :amount, :present_message, :created_at, :updated_at))
 
+          user_present_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
           user_present = UserPresent.new(user_present_hash.merge(id: user_present_id))
 
           # historyに入れる
