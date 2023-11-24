@@ -395,6 +395,10 @@ module Isuconquest
       rescue ArgumentError => e
         raise HttpError.new(400, e.inspect)
       end
+
+      def session_store
+        @_session_store ||= ActiveSupport::Cache::MemoryStore.new
+      end
     end
 
     # adminMiddleware
@@ -439,8 +443,7 @@ module Isuconquest
 
         request_at = get_request_time()
 
-        query = 'SELECT * FROM user_sessions WHERE session_id=? AND deleted_at IS NULL'
-        user_session = db.xquery(query, sess_id).first
+        user_session = session_store.read(sess_id)
         raise HttpError.new(401, 'unauthorized user') if user_session.nil?
 
         if user_session.fetch(:user_id) != user_id
@@ -448,8 +451,7 @@ module Isuconquest
         end
 
         if user_session.fetch(:expired_at) < request_at
-          query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
-          db.xquery(query, request_at, sess_id)
+          session_store.write(sess_id, nil)
           raise HttpError.new(401, 'session expired')
         end
       end
@@ -557,8 +559,7 @@ module Isuconquest
           updated_at: request_at,
           expired_at: request_at + 86400,
         )
-        query = 'INSERT INTO user_sessions(user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?)'
-        db.xquery(query, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
+        session_store.write(sess_id, sess)
 
         json(
           userId: user.id,
@@ -587,24 +588,15 @@ module Isuconquest
 
       db_transaction do
         # sessionを更新
-        query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
-        db.xquery(query, request_at, json_params[:userId])
+        session_store.write(sess_id, nil)
 
         # session_id = generate_id()
         sess_id = generate_uuid()
-        sess = Session.new(
-          # id: session_id,
-          user_id: json_params[:userId],
-          session_id: sess_id,
-          created_at: request_at,
-          updated_at: request_at,
-          expired_at: request_at + 86400,
-        )
-        # query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
-        # db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
+        sess = {
+          user_id: json_params[:userId]
+        }
 
-        query = 'INSERT INTO user_sessions(user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?)'
-        db.xquery(query, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
+        session_store.write(sess_id, sess, expires_in: 86400)
         # すでにログインしているユーザはログイン処理をしない
         if complete_today_login?(user.last_activated_at, request_at)
           user.updated_at = request_at
