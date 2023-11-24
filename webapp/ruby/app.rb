@@ -904,7 +904,7 @@ module Isuconquest
         )
       end
 
-      user_ids = obtain_presents.map(&:user_id).uniq
+      user_ids = obtain_present.map(&:user_id).uniq
       placeholder = user_ids.map { '?' }.join(',')
       id_to_user = db.xquery(
         "SELECT * FROM users WHERE id IN (#{placeholder})",
