@@ -11,7 +11,7 @@ nginx.log:
 nginx.alp:
 	alp json \
 		--sort sum -r \
-		-m "/posts/[0-9]+,/@\w+,/image/[0-9]+.(jpg|gif|png)" \
+		-m "/user/\w+/present/receive,/user/\w+/gacha/draw/\w+/\w+,/user/\w+/present/index/\w+,/user/\w+/card/addexp/\w+,/user/\w+/gacha/index,/user/\w+/item,/user/\w+/home,/admin/user/\w+,/user/\w+/reward,/user/\w+/card" \
 		-o count,method,uri,min,avg,max,sum \
 		< /var/log/nginx/access.log
 
