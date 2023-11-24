@@ -366,14 +366,16 @@ module Isuconquest
         [obtain_coins, obtain_cards, obtain_items]
       end
 
-      def obtain_item_v2(user, item_id, item_type, obtain_amount, request_at)
+      def obtain_item_v2(user, item, obtain_amount, request_at)
         obtain_coins = []
         obtain_cards = []
         obtain_items = []
 
         user_id = user.fetch(:id)
+        item_id = item.fetch(:id)
+        item_type = item.fetch(:item_type)
 
-        case item_type
+        case item_id
         when 1 # coin
           raise HttpError.new(404, 'not found user') unless user
 
@@ -384,8 +386,6 @@ module Isuconquest
           obtain_coins.push(obtain_amount)
 
         when 2 # card(ハンマー)
-          query = 'SELECT * FROM item_masters WHERE id=? AND item_type=?'
-          item = db.xquery(query, item_id, item_type).first
           raise HttpError.new(404, 'not found item') unless item
 
           card_hash = {
@@ -406,8 +406,6 @@ module Isuconquest
           obtain_cards.push(card)
 
         when 3, 4 # 強化素材
-          query = 'SELECT * FROM item_masters WHERE id=? AND item_type=?'
-          item = db.xquery(query, item_id, item_type).first
           raise HttpError.new(404, 'not found item') unless item
 
           # 所持数取得
@@ -915,6 +913,15 @@ module Isuconquest
         u.fetch(:id)
       end
 
+      item_ids = obtain_present.map(&:item_id).uniq
+      placeholder = item_ids.map { '?' }.join(',')
+      id_and_type_to_item = db.xquery(
+        "SELECT * FROM item_masters WHERE id IN (#{placeholder}) AND item_type IN (2, 3, 4)",
+        *item_ids,
+      ).group_by do |item|
+        [item.fetch(:id), item.fetch(:item_type)]
+      end
+
       db_transaction do
         # 配布処理
         obtain_present.each do |v|
@@ -926,8 +933,9 @@ module Isuconquest
           db.xquery(query, request_at, request_at, v.id)
 
           user = id_to_user[v.user_id]&.first
+          item = id_and_type_to_item[[v.item_id, v.item_type]]&.first
 
-          obtain_item_v2(user, v.item_id, v.item_type, v.amount, request_at)
+          obtain_item_v2(user, item, v.amount, request_at)
         end
       end
 
