@@ -17,7 +17,7 @@ Datadog.configure do |c|
   c.tracing.instrument :sinatra, service_name: "freee.group:ayataka-12final-sinatra", analytics_enabled: true
   c.tracing.instrument :mysql2,  service_name: "freee.group:ayataka-12final-mysql2",  analytics_enabled: true
   c.env = 'prod'
-  c.version = APP_VERSION || '12.0.0'
+  c.version = ENV.fetch('APP_VERSION', '12.0.0')
 end
 
 module Isuconquest
