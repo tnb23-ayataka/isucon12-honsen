@@ -440,7 +440,8 @@ module Isuconquest
         end
 
         if expired_at_session < request_at
-          #user_id_store.write()
+          user_id_store.write(sess_id, nil)
+          expired_at_store.write(sess_id, nil)
           #query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
           #db.xquery(query, request_at, sess_id)
           raise HttpError.new(401, 'session expired')
@@ -605,7 +606,7 @@ module Isuconquest
       db_transaction do
         # sessionを更新
         ################
-
+        user_id_store.write()
         query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         db.xquery(query, request_at, json_params[:userId])
         ################
@@ -620,6 +621,9 @@ module Isuconquest
           updated_at: request_at,
           expired_at: request_at + 86400,
         )
+
+        user_id_store.write(sess.session_id, sess.id)
+        expired_at_store.write(sess.session_id, sess.expired_at)
         query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
         db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
 
