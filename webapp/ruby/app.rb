@@ -171,23 +171,23 @@ module Isuconquest
             init_bonus = true
 
             # user_bonus_id = generate_id()
-            user_bonus = {
-              user_id: user_id,
-              login_bonus_id: bonus.fetch(:id),
-              last_reward_sequence: 0,
-              loop_count: 1,
-              created_at: request_at,
-              updated_at: request_at,
-            }
-            # user_bonus = UserLoginBonus.new(
-            #   id: user_bonus_id,
+            # user_bonus = {
             #   user_id: user_id,
             #   login_bonus_id: bonus.fetch(:id),
             #   last_reward_sequence: 0,
             #   loop_count: 1,
             #   created_at: request_at,
             #   updated_at: request_at,
-            # )
+            # }
+            user_bonus = UserLoginBonus.new(
+              # id: user_bonus_id,
+              user_id: user_id,
+              login_bonus_id: bonus.fetch(:id),
+              last_reward_sequence: 0,
+              loop_count: 1,
+              created_at: request_at,
+              updated_at: request_at,
+            )
           end
 
           # ボーナス進捗更新
@@ -218,7 +218,7 @@ module Isuconquest
             query = 'INSERT INTO user_login_bonuses(user_id, login_bonus_id, last_reward_sequence, loop_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
             db.xquery(query, user_bonus.user_id, user_bonus.login_bonus_id, user_bonus.last_reward_sequence, user_bonus.loop_count, user_bonus.created_at, user_bonus.updated_at)
             user_bonus_id = db.last_id
-            user_bonus = UserLoginBonus.new(user_bonus.merge(id: user_bonus_id))
+            user_bonus.id = user_bonus_id
           else
             query = 'UPDATE user_login_bonuses SET last_reward_sequence=?, loop_count=?, updated_at=? WHERE id=?'
             db.xquery(query, user_bonus.last_reward_sequence, user_bonus.loop_count, user_bonus.updated_at, user_bonus.id)
