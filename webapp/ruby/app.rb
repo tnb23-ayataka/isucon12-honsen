@@ -957,8 +957,8 @@ module Isuconquest
           *obtain_present.flat_map { |v| [v.id, request_at, request_at] },
         )
 
-        user_id_to_obtain_amount = {}
-        obtain_present.each do |v|
+        user_id_to_type1_obtain_amount = {}
+        obtain_present.select { |v| v.item_type == 1 }.each do |v|
           user_id_to_obtain_amount[v.user_id] ||= 0
           user_id_to_obtain_amount[v.user_id] += v.amount
         end
@@ -971,7 +971,7 @@ module Isuconquest
         SQL
         db.xquery(
           query,
-          *user_ids.flat_map { |user_id| [user_id, user_id_to_obtain_amount[user_id]] },
+          *user_ids.flat_map { |user_id| [user_id, user_id_to_type1_obtain_amount[user_id]] },
         )
 
         obtain_present.each do |v|
