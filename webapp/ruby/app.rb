@@ -883,10 +883,10 @@ module Isuconquest
       query = 'UPDATE user_one_time_tokens SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
       db.xquery(query, request_at, user_id)
 
-      token_id = generate_id()
+      # token_id = generate_id()
       tk = generate_uuid()
       token = UserOneTimeToken.new(
-        id: token_id,
+        # id: token_id,
         user_id: user_id,
         token: tk,
         token_type: 2,
@@ -894,8 +894,8 @@ module Isuconquest
         updated_at: request_at,
         expired_at: request_at + 600,
       )
-      query = 'INSERT INTO user_one_time_tokens(id, user_id, token, token_type, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      db.xquery(query, token.id, token.user_id, token.token, token.token_type, token.created_at, token.updated_at, token.expired_at)
+      query = 'INSERT INTO user_one_time_tokens(user_id, token, token_type, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
+      db.xquery(query,  token.user_id, token.token, token.token_type, token.created_at, token.updated_at, token.expired_at)
 
       json(
         oneTimeToken: token.token,
