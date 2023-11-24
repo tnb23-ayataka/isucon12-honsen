@@ -379,6 +379,80 @@ module Isuconquest
         [obtain_coins, obtain_cards, obtain_items]
       end
 
+      def obtain_item_v2(user, item, user_item, obtain_amount, request_at)
+        obtain_coins = []
+        obtain_cards = []
+        obtain_items = []
+
+        user_id = user.fetch(:id)
+        item_id = item.fetch(:id)
+        item_type = item.fetch(:item_type)
+
+        case item_type
+        when 1 # coin
+          raise HttpError.new(404, 'not found user') unless user
+
+          query = 'UPDATE users SET isu_coin=? WHERE id=?'
+          total_coin = user.fetch(:isu_coin) + obtain_amount
+          db.xquery(query, total_coin, user_id)
+
+          obtain_coins.push(obtain_amount)
+
+        when 2 # card(ハンマー)
+          raise HttpError.new(404, 'not found item') unless item
+
+          card_hash = {
+            user_id:,
+            card_id: item.fetch(:id),
+            amount_per_sec: item.fetch(:amount_per_sec),
+            level: 1,
+            total_exp: 0,
+            created_at: request_at,
+            updated_at: request_at,
+          }
+          query = 'INSERT INTO user_cards(user_id, card_id, amount_per_sec, level, total_exp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          db.xquery(query, *card_hash.values_at(:user_id, :card_id, :amount_per_sec, :level, :total_exp, :created_at, :updated_at))
+          user_card_id = db.last_id
+
+          card = UserCard.new(card_hash.merge(id: user_card_id))
+
+          obtain_cards.push(card)
+
+        when 3, 4 # 強化素材
+          raise HttpError.new(404, 'not found item') unless item
+
+          # 所持数取得
+          if user_item.nil? # 新規作成
+            user_item_id = generate_id()
+            user_item_hash = {
+              user_id: user_id,
+              item_type: item.fetch(:item_type),
+              item_id: item.fetch(:id),
+              amount: obtain_amount,
+              created_at: request_at,
+              updated_at: request_at,
+            }
+            query = "INSERT INTO user_items(user_id, item_id, item_type, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+            db.xquery(query, *user_item_hash.values_at(:user_id, :item_id, :item_type, :amount, :created_at, :updated_at))
+            user_item_id = db.last_id
+
+            user_item = UserItem.new(user_item_hash.merge(id: user_item_id))
+          else # 更新
+            user_item.amount += obtain_amount
+            user_item.updated_at = request_at
+            query = 'UPDATE user_items SET amount=?, updated_at=? WHERE id=?'
+            db.xquery(query, user_item.amount, user_item.updated_at, user_item.id)
+          end
+
+          obtain_items.push(user_item)
+
+        else
+          raise HttpError.new(400, 'invalid item type')
+        end
+
+        [obtain_coins, obtain_cards, obtain_items]
+      end
+
       def generate_id
         db = Thread.current[:generate_id_db] ||= connect_db
         update_error = nil
@@ -844,17 +918,58 @@ module Isuconquest
         )
       end
 
+      user_ids = obtain_present.map(&:user_id).uniq
+      user_placeholder = user_ids.map { '?' }.join(',')
+      id_to_user = db.xquery(
+        "SELECT * FROM users WHERE id IN (#{user_placeholder})",
+        *user_ids,
+      ).group_by do |u|
+        u.fetch(:id)
+      end
+
+      item_ids = obtain_present.map(&:item_id).uniq
+      item_placeholder = item_ids.map { '?' }.join(',')
+      id_and_type_to_item = db.xquery(
+        "SELECT * FROM item_masters WHERE id IN (#{item_placeholder})",
+        *item_ids,
+      ).group_by do |item|
+        [item.fetch(:id), item.fetch(:item_type)]
+      end
+
+      user_id_and_item_id_to_user_item = db.xquery(
+        "SELECT * FROM user_items WHERE user_id IN (#{user_placeholder}) AND item_id IN (#{item_placeholder})",
+        *user_ids,
+        *item_ids,
+      ).map { UserItem.new(_1) }.group_by do |user_item|
+        [user_item.user_id, user_item.item_id]
+      end
+
       db_transaction do
         # 配布処理
+        query = <<~SQL
+          REPLACE INTO
+            user_presents (`id`, `deleted_at`, `updated_at`)
+          VALUES
+            ${obtain_present.map { '(?, ?, ?)' }.join(',')}
+        SQL
+        db.xquery(
+          query,
+          *obtain_present.flat_map { |v| [v.id, request_at, request_at] },
+        )
+
         obtain_present.each do |v|
           raise HttpError.new(500, 'received present') if v.deleted_at
           v.updated_at = request_at
           v.deleted_at = request_at
 
-          query = 'UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?'
-          db.xquery(query, request_at, request_at, v.id)
+          # query = 'UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?'
+          # db.xquery(query, request_at, request_at, v.id)
 
-          obtain_item(v.user_id, v.item_id, v.item_type, v.amount, request_at)
+          user = id_to_user[v.user_id]&.first
+          item = id_and_type_to_item[[v.item_id, v.item_type]]&.first
+          user_item = user_id_and_item_id_to_user_item[[v.user_id, v.item_id]]&.first
+
+          obtain_item_v2(user, item, user_item, v.amount, request_at)
         end
       end
 
