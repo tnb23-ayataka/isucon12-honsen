@@ -925,7 +925,7 @@ module Isuconquest
         *user_ids,
         *item_ids,
       ).map { UserItem.new(_1) }.group_by do |user_item|
-        [user_item.fetch(:user_id), user_item.fetch(:item_id)]
+        [user_item.user_id, user_item.item_id]
       end
 
       db_transaction do
