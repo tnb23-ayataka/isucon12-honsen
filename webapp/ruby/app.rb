@@ -1172,9 +1172,9 @@ module Isuconquest
         query = 'UPDATE user_decks SET updated_at=?, deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         db.xquery(query, request_at, request_at, user_id)
 
-        user_deck_id = generate_id()
+        # user_deck_id = generate_id()
         new_deck = UserDeck.new(
-          id: user_deck_id,
+          # id: user_deck_id,
           user_id:,
           user_card_id_1: json_params.fetch(:cardIds).fetch(0),
           user_card_id_2: json_params.fetch(:cardIds).fetch(1),
@@ -1182,8 +1182,9 @@ module Isuconquest
           created_at: request_at,
           updated_at: request_at,
         )
-        query = 'INSERT INTO user_decks(id, user_id, user_card_id_1, user_card_id_2, user_card_id_3, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        db.xquery(query, new_deck.id, new_deck.user_id, new_deck.user_card_id_1, new_deck.user_card_id_2, new_deck.user_card_id_3, new_deck.created_at, new_deck.updated_at)
+        query = 'INSERT INTO user_decks(user_id, user_card_id_1, user_card_id_2, user_card_id_3, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+        db.xquery(query, new_deck.user_id, new_deck.user_card_id_1, new_deck.user_card_id_2, new_deck.user_card_id_3, new_deck.created_at, new_deck.updated_at)
+        new_deck.id = db.last_id
 
         json(
           updatedResources: UpdatedResources.new(request_at, nil, nil, nil, [new_deck], nil, nil, nil).as_json,
