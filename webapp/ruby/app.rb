@@ -369,7 +369,7 @@ module Isuconquest
       def obtain_item_v2(user, item_id, item_type, obtain_amount, request_at)
         obtain_coins = []
         obtain_cards = []
-        obtain_items = [
+        obtain_items = []
 
         user_id = user.fetch(:id)
 
