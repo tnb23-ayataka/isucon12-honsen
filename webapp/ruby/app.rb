@@ -10,6 +10,7 @@ require 'sinatra/base'
 require 'sinatra/cookies'
 require 'sinatra/json'
 require 'ddtrace'
+require 'active_support/all'
 
 require_relative './admin'
 
@@ -53,6 +54,14 @@ module Isuconquest
         @json_params ||= JSON.parse(request.body.tap(&:rewind).read, symbolize_names: true)
       rescue JSON::ParserError => e
         raise HttpError.new(400, e.inspect)
+      end
+
+      def user_id_store
+        @user_id_store ||= ActiveSupport::Cache::MemoryStore.new
+      end
+
+      def expired_at_store
+        @expired_at_store ||= ActiveSupport::Cache::MemoryStore.new
       end
 
       def connect_db(batch = false)
@@ -421,18 +430,37 @@ module Isuconquest
 
         request_at = get_request_time()
 
-        query = 'SELECT * FROM user_sessions WHERE session_id=? AND deleted_at IS NULL'
-        user_session = db.xquery(query, sess_id).first
+        user_id_session = user_id_store.read(sess_id)
+        expired_at_session = expired_at_store.read(sess_id)
+
         raise HttpError.new(401, 'unauthorized user') if user_session.nil?
 
-        if user_session.fetch(:user_id) != user_id
+        if user_id_session != user_id
           raise HttpError.new(403, 'forbidden')
         end
 
-        if user_session.fetch(:expired_at) < request_at
-          query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
-          db.xquery(query, request_at, sess_id)
+        if expired_at_session < request_at
+          #user_id_store.write()
+          #query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
+          #db.xquery(query, request_at, sess_id)
           raise HttpError.new(401, 'session expired')
+        end
+
+
+        if user_id_session == nil || expired_at_session == nil then
+          query = 'SELECT * FROM user_sessions WHERE session_id=? AND deleted_at IS NULL'
+          user_session = db.xquery(query, sess_id).first
+          raise HttpError.new(401, 'unauthorized user') if user_session.nil?
+
+          if user_session.fetch(:user_id) != user_id
+            raise HttpError.new(403, 'forbidden')
+          end
+
+          if user_session.fetch(:expired_at) < request_at
+            query = 'UPDATE user_sessions SET deleted_at=? WHERE session_id=?'
+            db.xquery(query, request_at, sess_id)
+            raise HttpError.new(401, 'session expired')
+          end
         end
       end
     end
@@ -540,8 +568,13 @@ module Isuconquest
           updated_at: request_at,
           expired_at: request_at + 86400,
         )
+
+        #################
+        user_id_store.write(sess.session_id, sess.id)
+        expired_at_store.write(sess.session_id, sess.expired_at)
         query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
         db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
+        ###########################
 
         json(
           userId: user.id,
@@ -570,8 +603,11 @@ module Isuconquest
 
       db_transaction do
         # sessionを更新
+        ################
+        
         query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         db.xquery(query, request_at, json_params[:userId])
+        ################
 
         session_id = generate_id()
         sess_id = generate_uuid()
