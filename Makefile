@@ -26,3 +26,6 @@ mysql-slow.dump:
 
 mysql-slow.digest:
 	sudo pt-query-digest /var/log/mysql/mysql-slow.log
+
+service.restart:
+	sudo systemctl restart isuconquest.ruby
