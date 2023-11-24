@@ -530,18 +530,18 @@ module Isuconquest
         user, login_bonuses, presents = login_process(user_id, request_at)
 
         # generate session
-        session_id = generate_id()
+        # session_id = generate_id()
         sess_id = generate_uuid()
         sess = Session.new(
-          id: session_id,
+          # id: session_id,
           user_id: user.id,
           session_id: sess_id,
           created_at: request_at,
           updated_at: request_at,
           expired_at: request_at + 86400,
         )
-        query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
-        db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
+        query = 'INSERT INTO user_sessions(user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?)'
+        db.xquery(query, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
 
         json(
           userId: user.id,
@@ -573,7 +573,7 @@ module Isuconquest
         query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         db.xquery(query, request_at, json_params[:userId])
 
-        session_id = generate_id()
+        # session_id = generate_id()
         sess_id = generate_uuid()
         sess = Session.new(
           # id: session_id,
