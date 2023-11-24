@@ -606,10 +606,10 @@ module Isuconquest
       db_transaction do
         # sessionを更新
         ################
-        query = 'SELECT * from user_sessions where user_id=?'
-        session = db.xquery(query, json_params[:userId])[0]
-        user_id_store.write(session.id, nil)
-        expired_at_store.write(session.id, nil)
+        query = 'SELECT * FROM user_sessions WHERE user_id=?'
+        user_session = db.xquery(query, json_params[:userId]).first
+        user_id_store.write(user_session.fetch(:session_id), nil)
+        expired_at_store.write(user_session.fetch(:session_id), nil)
         #query = 'UPDATE user_sessions SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
         #db.xquery(query, request_at, json_params[:userId])
         ################
