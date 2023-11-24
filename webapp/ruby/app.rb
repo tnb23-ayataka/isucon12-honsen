@@ -456,11 +456,6 @@ module Isuconquest
         if user_session.fetch(:user_id) != user_id
           raise HttpError.new(403, 'forbidden')
         end
-
-        if user_session.fetch(:expired_at) < request_at
-          session_store.write(sess_id, nil)
-          raise HttpError.new(401, 'session expired')
-        end
       end
     end
 
