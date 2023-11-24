@@ -661,7 +661,6 @@ module Isuconquest
       # generate one time token
       query = 'UPDATE user_one_time_tokens SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
       db.xquery(query, request_at, user_id)
-      token_id = generate_id()
       tk = generate_uuid()
       token_hash = {
         user_id:,
