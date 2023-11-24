@@ -402,7 +402,7 @@ module Isuconquest
       end || Time.now).to_i
 
       # マスタ確認
-      master_version = db.query('SELECT * FROM version_masters WHERE status=1').first
+      master_version = db.query('SELECT * FROM version_masters WHERE status=1 limit 1').first
       unless master_version
         raise HttpError.new(404, 'active master version is not found')
       end
@@ -494,41 +494,40 @@ module Isuconquest
       request_at = get_request_time()
 
       db_transaction do
-        user_id = generate_id()
-        user = User.new(
-          id: user_id,
+        user_hash = {
           isu_coin: 0,
           last_getreward_at: request_at,
           last_activated_at: request_at,
           registered_at: request_at,
           created_at: request_at,
           updated_at: request_at,
-        )
+        }
+        query = 'INSERT INTO users(last_activated_at, registered_at, last_getreward_at, created_at, updated_at) VALUES(?, ?, ?, ?, ?)'
+        db.xquery(query, *user_hash.values_at(:last_activated_at, :registered_at, :last_getreward_at, :created_at, :updated_at))
+        user_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
 
-        query = 'INSERT INTO users(id, last_activated_at, registered_at, last_getreward_at, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?)'
-        db.xquery(query, user.id, user.last_activated_at, user.registered_at, user.last_getreward_at, user.created_at, user.updated_at)
+        user = User.new(user_hash.merge(id: user_id))
 
-        user_device_id = generate_id()
-        user_device = UserDevice.new(
-          id: user_device_id,
+        user_device_hash = {
           user_id: user.id,
           platform_id: json_params.fetch(:viewerId),
           platform_type: json_params.fetch(:platformType),
           created_at: request_at,
           updated_at: request_at,
-        )
-        query = 'INSERT INTO user_devices(id, user_id, platform_id, platform_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
-        db.xquery(query, user_device.id, user.id, json_params.fetch(:viewerId), json_params.fetch(:platformType), request_at, request_at)
+        }
+        query = 'INSERT INTO user_devices(user_id, platform_id, platform_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+        db.xquery(query, *user_device_hash.values_at(:user_id, :platform_id, :platform_type, :created_at, :updated_at))
+        user_device_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+
+        user_device = UserDevice.new(user_device_hash.merge(id: user_device_id))
 
         # 初期デッキ付与
-        query = 'SELECT * FROM item_masters WHERE id=?'
+        query = 'SELECT * FROM item_masters WHERE id=? LIMIT 1'
         init_card = db.xquery(query, 2).first
         raise HttpError.new(404, 'not found item') unless init_card
 
         init_cards = 3.times.map do
-          card_id = generate_id()
-          card = UserCard.new(
-            id: card_id,
+          card_hash = {
             user_id: user.id,
             card_id: init_card.fetch(:id),
             amount_per_sec: init_card.fetch(:amount_per_sec),
@@ -536,41 +535,40 @@ module Isuconquest
             total_exp: 0,
             created_at: request_at,
             updated_at: request_at,
-          )
-          query = 'INSERT INTO user_cards(id, user_id, card_id, amount_per_sec, level, total_exp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-          db.xquery(query, card.id, card.user_id, card.card_id, card.amount_per_sec, card.level, card.total_exp, card.created_at, card.updated_at)
+          }
+          query = 'INSERT INTO user_cards(user_id, card_id, amount_per_sec, level, total_exp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          db.xquery(query, *card_hash.values_at(:user_id, :card_id, :amount_per_sec, :level, :total_exp, :created_at, :updated_at))
+          card_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
 
-          card
+          UserCard.new(card_hash.merge(id: card_id))
         end
 
-        deck_id = generate_id()
-        init_deck = UserDeck.new(
-          id: deck_id,
+        init_deck_hash = {
           user_id: user.id,
           user_card_id_1: init_cards.fetch(0).id,
           user_card_id_2: init_cards.fetch(1).id,
           user_card_id_3: init_cards.fetch(2).id,
           created_at: request_at,
           updated_at: request_at,
-        )
-        query = 'INSERT INTO user_decks(id, user_id, user_card_id_1, user_card_id_2, user_card_id_3, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        db.xquery(query, init_deck.id, init_deck.user_id, init_deck.user_card_id_1, init_deck.user_card_id_2, init_deck.user_card_id_3, init_deck.created_at, init_deck.updated_at)
+        }
+        query = 'INSERT INTO user_decks(user_id, user_card_id_1, user_card_id_2, user_card_id_3, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+        db.xquery(query, *init_deck_hash.values_at(:user_id, :user_card_id_1, :user_card_id_2, :user_card_id_3, :created_at, :updated_at))
+        init_deck_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+
+        init_deck = UserDeck.new(init_deck_hash.merge(id: init_deck_id))
 
         # ログイン処理
         user, login_bonuses, presents = login_process(user_id, request_at)
 
         # generate session
-        session_id = generate_id()
         sess_id = generate_uuid()
         sess = Session.new(
-          id: session_id,
           user_id: user.id,
           session_id: sess_id,
           created_at: request_at,
           updated_at: request_at,
           expired_at: request_at + 86400,
         )
-
         #################
         user_id_store.write(sess.session_id, sess.user_id)
         expired_at_store.write(sess.session_id, sess.expired_at)
@@ -616,7 +614,7 @@ module Isuconquest
         #db.xquery(query, request_at, json_params[:userId])
         ################
 
-        session_id = generate_id()
+        # session_id = generate_id()
         sess_id = generate_uuid()
         sess = Session.new(
           # id: session_id,
