@@ -223,7 +223,7 @@ module Isuconquest
         normal_presents = db.xquery('SELECT * FROM present_all_masters WHERE registered_start_at <= ? AND registered_end_at >= ?', request_at, request_at)
         obtain_presents = []
 
-        present_all_masters = normal_presents.each do |normal_present_|
+        present_all_masters = normal_presents.map do |normal_present_|
           PresentAllMaster.new(normal_present_)
         end
         present_all_masters_id = present_all_masters.map(&:id)
