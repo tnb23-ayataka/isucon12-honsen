@@ -742,9 +742,7 @@ module Isuconquest
         presents = []
 
         result.each do |v|
-          present_id = generate_id()
-          present = UserPresent.new(
-            id: present_id,
+          present_hash = user_present = {
             user_id: user_id,
             sent_at: request_at,
             item_type: v.fetch(:item_type),
@@ -753,9 +751,12 @@ module Isuconquest
             present_message: "#{gacha_info.fetch(:name)}の付与アイテムです",
             created_at: request_at,
             updated_at: request_at,
-          )
-          query = 'INSERT INTO user_presents(id, user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-          db.xquery(query, present.id, present.user_id, present.sent_at, present.item_type, present.item_id, present.amount, present.present_message, present.created_at, present.updated_at)
+          }
+          query = 'INSERT INTO user_presents(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          db.xquery(query, *present_hash.values_at(:user_id, :sent_at, :item_type, :item_id, :amount, :present_message, :created_at, :updated_at))
+          present_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+
+          present = UserPresent.new(present_hash.merge(id: present_id))
 
           presents.push(present)
         end
