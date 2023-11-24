@@ -18,7 +18,7 @@ Datadog.configure do |c|
   c.tracing.instrument :sinatra, service_name: "freee.group:ayataka-12final-sinatra", analytics_enabled: true
   c.tracing.instrument :mysql2,  service_name: "freee.group:ayataka-12final-mysql2",  analytics_enabled: true
   c.env = 'prod'
-  c.version = '12.0.1'
+  c.version = '120.0.3'
 end
 
 module Isuconquest
@@ -572,7 +572,7 @@ module Isuconquest
         )
 
         #################
-        user_id_store.write(sess.session_id, sess.id)
+        user_id_store.write(sess.session_id, sess.user_id)
         expired_at_store.write(sess.session_id, sess.expired_at)
         #query = 'INSERT INTO user_sessions(id, user_id, session_id, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
         #db.xquery(query, sess.id, sess.user_id, sess.session_id, sess.created_at, sess.updated_at, sess.expired_at)
