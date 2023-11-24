@@ -366,7 +366,7 @@ module Isuconquest
         [obtain_coins, obtain_cards, obtain_items]
       end
 
-      def obtain_item_v2(user, item, obtain_amount, request_at)
+      def obtain_item_v2(user, item, user_item, obtain_amount, request_at)
         obtain_coins = []
         obtain_cards = []
         obtain_items = []
@@ -409,8 +409,6 @@ module Isuconquest
           raise HttpError.new(404, 'not found item') unless item
 
           # 所持数取得
-          query = 'SELECT * FROM user_items WHERE user_id=? AND item_id=?'
-          user_item = db.xquery(query, user_id, item.fetch(:id)).first&.then { UserItem.new(_1) }
           if user_item.nil? # 新規作成
             user_item_id = generate_id()
             user_item_hash = {
@@ -905,21 +903,29 @@ module Isuconquest
       end
 
       user_ids = obtain_present.map(&:user_id).uniq
-      placeholder = user_ids.map { '?' }.join(',')
+      user_placeholder = user_ids.map { '?' }.join(',')
       id_to_user = db.xquery(
-        "SELECT * FROM users WHERE id IN (#{placeholder})",
+        "SELECT * FROM users WHERE id IN (#{user_placeholder})",
         *user_ids,
       ).group_by do |u|
         u.fetch(:id)
       end
 
       item_ids = obtain_present.map(&:item_id).uniq
-      placeholder = item_ids.map { '?' }.join(',')
+      item_placeholder = item_ids.map { '?' }.join(',')
       id_and_type_to_item = db.xquery(
-        "SELECT * FROM item_masters WHERE id IN (#{placeholder})",
+        "SELECT * FROM item_masters WHERE id IN (#{item_placeholder})",
         *item_ids,
       ).group_by do |item|
         [item.fetch(:id), item.fetch(:item_type)]
+      end
+
+      user_id_and_item_id_to_user_item = db.xquery(
+        "SELECT * FROM user_items WHERE user_id IN (${user_placeholder}) AND item_id IN (#{item_placeholder})",
+        *user_ids,
+        *item_ids,
+      ).map { UserItem.new(_1) }.group_by do |user_item|
+        [user_item.fetch(:user_id), user_item.fetch(:item_id)]
       end
 
       db_transaction do
@@ -934,8 +940,9 @@ module Isuconquest
 
           user = id_to_user[v.user_id]&.first
           item = id_and_type_to_item[[v.item_id, v.item_type]]&.first
+          user_item = user_id_and_item_id_to_user_item[[v.user_id, v.item_id]]&.first
 
-          obtain_item_v2(user, item, v.amount, request_at)
+          obtain_item_v2(user, item, user_item, v.amount, request_at)
         end
       end
 
