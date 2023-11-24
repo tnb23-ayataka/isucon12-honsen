@@ -222,11 +222,23 @@ module Isuconquest
       def obtain_present(user_id, request_at)
         normal_presents = db.xquery('SELECT * FROM present_all_masters WHERE registered_start_at <= ? AND registered_end_at >= ?', request_at, request_at)
         obtain_presents = []
+
+        present_all_masters = normal_presents.each do |normal_present_|
+          PresentAllMaster.new(normal_present_)
+        end
+        present_all_masters_id = present_all_masters.map(&:id)
+
+        query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN (#{present_all_masters_id.map {'?'}.join(',')})"
+        present_all_masters_received_history = db.xquery(query, user_id, *present_all_masters_id)
+
+        present_all_ids_to_present_all_masters_history = present_all_ids_to_present_all_masters_history.group_by(&:present_all_id)
+
         normal_presents.each do |normal_present_|
           normal_present = PresentAllMaster.new(normal_present_)
 
-          query = 'SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?'
-          user_present_all_received_history = db.xquery(query, user_id, normal_present.id).first
+          # query = 'SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?'
+          # user_present_all_received_history = db.xquery(query, user_id, normal_present.id).first
+          user_present_all_received_history = present_all_ids_to_present_all_masters_history[normal_present.id]&.first
           next if user_present_all_received_history # プレゼント配布済
 
           # user present boxに入れる
