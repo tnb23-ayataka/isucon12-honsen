@@ -946,24 +946,24 @@ module Isuconquest
 
       db_transaction do
         # 配布処理
-        query = <<~SQL
-          REPLACE INTO
-            user_presents (`id`, `deleted_at`, `updated_at`)
-          VALUES
-            ${obtain_present.map { '(?, ?, ?)' }.join(',')}
-        SQL
-        db.xquery(
-          query,
-          *obtain_present.flat_map { |v| [v.id, request_at, request_at] },
-        )
+        # query = <<~SQL
+        #   REPLACE INTO
+        #     user_presents (`id`, `deleted_at`, `updated_at`)
+        #   VALUES
+        #     ${obtain_present.map { '(?, ?, ?)' }.join(',')}
+        # SQL
+        # db.xquery(
+        #   query,
+        #   *obtain_present.flat_map { |v| [v.id, request_at, request_at] },
+        # )
 
         obtain_present.each do |v|
           raise HttpError.new(500, 'received present') if v.deleted_at
           v.updated_at = request_at
           v.deleted_at = request_at
 
-          # query = 'UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?'
-          # db.xquery(query, request_at, request_at, v.id)
+          query = 'UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?'
+          db.xquery(query, request_at, request_at, v.id)
 
           user = id_to_user[v.user_id]&.first
           item = id_and_type_to_item[[v.item_id, v.item_type]]&.first
