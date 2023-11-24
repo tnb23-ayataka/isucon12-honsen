@@ -611,7 +611,7 @@ module Isuconquest
 
           next json(
             viewerId: json_params[:viewerId],
-            sessionId: sess.fetch(:session_id),
+            sessionId: sess_id,
             updatedResources: UpdatedResources.new(request_at, user, nil, nil, nil, nil, nil, nil).as_json,
           )
         end
@@ -621,7 +621,7 @@ module Isuconquest
 
         json(
           viewerId: json_params[:viewerId],
-          sessionId: sess.fetch(:session_id),
+          sessionId: sess_id,
           updatedResources: UpdatedResources.new(request_at, user, nil, nil, nil, nil, login_bonuses, presents).as_json,
         )
       end
