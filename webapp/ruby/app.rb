@@ -451,7 +451,9 @@ module Isuconquest
         request_at = get_request_time()
 
         user_session = fetch_session(sess_id)
+        p 'hogehogehogehogehogehoge'
         raise HttpError.new(401, 'unauthorized user') if user_session.nil?
+        p 'hogehogehogehogehogehoge'
 
         if user_session.fetch(:user_id) != user_id
           raise HttpError.new(403, 'forbidden')
