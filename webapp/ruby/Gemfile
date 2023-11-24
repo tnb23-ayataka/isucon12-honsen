@@ -14,3 +14,13 @@ gem 'ddtrace'
 group :development do
   gem 'irb'
 end
+
+gem "libddwaf", "= 1.14.0.0.0"
+
+gem "msgpack", "= 1.7.2"
+
+gem "ffi", "= 1.16.3"
+
+gem "debase-ruby_core_source", "= 3.2.2"
+
+gem "libdatadog", "= 5.0.0.1.0"
