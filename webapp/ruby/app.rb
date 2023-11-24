@@ -245,8 +245,7 @@ module Isuconquest
 
           # user present boxに入れる
           user_present_id = generate_id()
-          user_present = UserPresent.new(
-            id: user_present_id,
+          user_present_hash = {
             user_id: user_id,
             sent_at: request_at,
             item_type: normal_present.item_type,
@@ -254,10 +253,12 @@ module Isuconquest
             amount: normal_present.amount,
             present_message: normal_present.present_message,
             created_at: request_at,
-            updated_at: request_at,
-          )
-          query = 'INSERT INTO user_presents(id, user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-          db.xquery(query, user_present.id, user_present.user_id, user_present.sent_at, user_present.item_type, user_present.item_id, user_present.amount, user_present.present_message, user_present.created_at, user_present.updated_at)
+            updated_at: request_at
+          }
+          query = 'INSERT INTO user_presents(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          db.xquery(query, *user_present_hash.values_at(:user_id, :sent_at, :item_type, :item_id, :amount, :present_message, :created_at, :updated_at))
+
+          user_present = UserPresent.new(user_present_hash.merge(id: user_present_id))
 
           # historyに入れる
           present_history_id = generate_id()
