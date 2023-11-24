@@ -390,13 +390,13 @@ module Isuconquest
 
         case item_type
         when 1 # coin
-          raise HttpError.new(404, 'not found user') unless user
+          # raise HttpError.new(404, 'not found user') unless user
 
-          query = 'UPDATE users SET isu_coin=? WHERE id=?'
-          total_coin = user.fetch(:isu_coin) + obtain_amount
-          db.xquery(query, total_coin, user_id)
+          # query = 'UPDATE users SET isu_coin=? WHERE id=?'
+          # total_coin = user.fetch(:isu_coin) + obtain_amount
+          # db.xquery(query, total_coin, user_id)
 
-          obtain_coins.push(obtain_amount)
+          # obtain_coins.push(obtain_amount)
 
         when 2 # card(ハンマー)
           raise HttpError.new(404, 'not found item') unless item
@@ -955,6 +955,23 @@ module Isuconquest
         db.xquery(
           query,
           *obtain_present.flat_map { |v| [v.id, request_at, request_at] },
+        )
+
+        user_id_to_obtain_amount = {}
+        obtain_present.each do |v|
+          user_id_to_obtain_amount[v.user_id] ||= 0
+          user_id_to_obtain_amount[v.user_id] += v.amount
+        end
+
+        query = <<~SQL
+          REPLACE INTO
+            users (`id`, `isu_coin`)
+          VALUES
+            #{user_ids.map { '(?, ?)' }.join(',')}
+        SQL
+        db.xquery(
+          query,
+          *user_ids.flat_map { |user_id| [user_id, user_id_to_obtain_amount[user_id]] },
         )
 
         obtain_present.each do |v|
