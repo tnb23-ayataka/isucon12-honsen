@@ -231,7 +231,7 @@ module Isuconquest
         query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN (#{present_all_masters_id.map {'?'}.join(',')})"
         present_all_masters_received_history = db.xquery(query, user_id, *present_all_masters_id)
 
-        present_all_ids_to_present_all_masters_history = present_all_ids_to_present_all_masters_history.group_by(&:present_all_id)
+        present_all_ids_to_present_all_masters_history = present_all_masters_received_history.group_by(&:present_all_id)
 
         normal_presents.each do |normal_present_|
           normal_present = PresentAllMaster.new(normal_present_)
