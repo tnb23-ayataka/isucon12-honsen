@@ -10,6 +10,7 @@ require 'sinatra/base'
 require 'sinatra/cookies'
 require 'sinatra/json'
 require 'ddtrace'
+require 'activesupport'
 
 require_relative './admin'
 
