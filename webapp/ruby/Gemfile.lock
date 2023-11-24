@@ -1,7 +1,21 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    activesupport (7.1.2)
+      base64
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      connection_pool (>= 2.2.5)
+      drb
+      i18n (>= 1.6, < 2)
+      minitest (>= 5.1)
+      mutex_m
+      tzinfo (~> 2.0)
+    base64 (0.2.0)
     bcrypt (3.1.18)
+    bigdecimal (3.1.4)
+    concurrent-ruby (1.2.2)
+    connection_pool (2.4.1)
     datadog-ci (0.4.1)
       msgpack
     ddtrace (1.17.0)
@@ -11,17 +25,23 @@ GEM
       libddwaf (~> 1.14.0.0.0)
       msgpack
     debase-ruby_core_source (3.2.2)
+    drb (2.2.0)
+      ruby2_keywords
     ffi (1.16.3)
+    i18n (1.14.1)
+      concurrent-ruby (~> 1.0)
     io-console (0.5.11)
     irb (1.4.1)
       reline (>= 0.3.0)
     libdatadog (5.0.0.1.0)
     libddwaf (1.14.0.0.0)
       ffi (~> 1.0)
+    minitest (5.20.0)
     msgpack (1.7.2)
     multi_json (1.15.0)
     mustermann (2.0.2)
       ruby2_keywords (~> 0.0.1)
+    mutex_m (0.2.0)
     mysql2 (0.5.4)
     mysql2-cs-bind (0.1.1)
       mysql2
@@ -48,11 +68,14 @@ GEM
       sinatra (= 2.2.2)
       tilt (~> 2.0)
     tilt (2.0.11)
+    tzinfo (2.0.6)
+      concurrent-ruby (~> 1.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  activesupport
   bcrypt
   ddtrace
   debase-ruby_core_source (= 3.2.2)
