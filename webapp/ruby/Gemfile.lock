@@ -55,7 +55,12 @@ PLATFORMS
 DEPENDENCIES
   bcrypt
   ddtrace
+  debase-ruby_core_source (= 3.2.2)
+  ffi (= 1.16.3)
   irb
+  libdatadog (= 5.0.0.1.0)
+  libddwaf (= 1.14.0.0.0)
+  msgpack (= 1.7.2)
   mysql2
   mysql2-cs-bind
   puma
