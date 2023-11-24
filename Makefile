@@ -1,3 +1,6 @@
+bench: nginx.rotate mysql-slow.log
+	~/bin/benchmarker --stage=prod --request-timeout=10s --initialize-request-timeout=60s
+
 nginx.rotate:
 	sudo mv /var/log/nginx/access.log /var/log/nginx/access.log.old
 	sudo systemctl reload nginx
