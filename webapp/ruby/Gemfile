@@ -9,6 +9,7 @@ gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'bcrypt'
 gem 'rack-cors'
+gem 'ddtrace'
 
 group :development do
   gem 'irb'
