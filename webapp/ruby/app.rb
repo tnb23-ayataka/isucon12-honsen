@@ -663,17 +663,20 @@ module Isuconquest
       db.xquery(query, request_at, user_id)
       token_id = generate_id()
       tk = generate_uuid()
-      token = UserOneTimeToken.new(
-        id: token_id,
+      token_hash = {
         user_id:,
         token: tk,
         token_type: 1,
         created_at: request_at,
         updated_at: request_at,
         expired_at: request_at + 600,
-      )
-      query = 'INSERT INTO user_one_time_tokens(id, user_id, token, token_type, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      db.xquery(query, token.id, token.user_id, token.token, token.token_type, token.created_at, token.updated_at, token.expired_at)
+      }
+      query = 'INSERT INTO user_one_time_tokens(user_id, token, token_type, created_at, updated_at, expired_at) VALUES (?, ?, ?, ?, ?, ?)'
+      db.xquery(query, *token_hash.values_at(:user_id, :token, :token_type, :created_at, :updated_at, :expired_at))
+
+      token_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+
+      token = UserOneTimeToken.new(token_hash.merge(id: token_id))
 
       json(
         oneTimeToken: token.token,
