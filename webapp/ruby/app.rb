@@ -400,6 +400,12 @@ module Isuconquest
       def session_store
         @_session_store ||= ActiveSupport::Cache::MemoryStore.new
       end
+
+      def fetch_session(sess_id)
+        session_store.read(sess_id)
+      rescue KeyError
+        nil
+      end
     end
 
     # adminMiddleware
@@ -444,7 +450,7 @@ module Isuconquest
 
         request_at = get_request_time()
 
-        user_session = session_store.read(sess_id)
+        user_session = fetch_session(sess_id)
         raise HttpError.new(401, 'unauthorized user') if user_session.nil?
 
         if user_session.fetch(:user_id) != user_id
@@ -553,19 +559,15 @@ module Isuconquest
 
         # generate session
         sess_id = generate_uuid()
-        sess = Session.new(
-          user_id: user.id,
-          session_id: sess_id,
-          created_at: request_at,
-          updated_at: request_at,
-          expired_at: request_at + 86400,
-        )
+        sess = {
+          user_id: user.id
+        }
         session_store.write(sess_id, sess)
 
         json(
           userId: user.id,
           viewerId: json_params.fetch(:viewerId),
-          sessionId: sess.fetch(:session_id),
+          sessionId: sess_id,
           createdAt: request_at,
           updatedResources: UpdatedResources.new(request_at, user, user_device, init_cards, [init_deck], nil, login_bonuses, presents).as_json,
         )
