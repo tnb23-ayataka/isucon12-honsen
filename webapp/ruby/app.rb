@@ -477,7 +477,7 @@ module Isuconquest
         }
         query = 'INSERT INTO users(last_activated_at, registered_at, last_getreward_at, created_at, updated_at) VALUES(?, ?, ?, ?, ?)'
         db.xquery(query, *user_hash.values_at(:last_activated_at, :registered_at, :last_getreward_at, :created_at, :updated_at))
-        user_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+        user_id = db.last_id
 
         user = User.new(user_hash.merge(id: user_id))
 
@@ -490,7 +490,7 @@ module Isuconquest
         }
         query = 'INSERT INTO user_devices(user_id, platform_id, platform_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
         db.xquery(query, *user_device_hash.values_at(:user_id, :platform_id, :platform_type, :created_at, :updated_at))
-        user_device_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+        user_device_id = db.last_id
 
         user_device = UserDevice.new(user_device_hash.merge(id: user_device_id))
 
@@ -511,7 +511,7 @@ module Isuconquest
           }
           query = 'INSERT INTO user_cards(user_id, card_id, amount_per_sec, level, total_exp, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
           db.xquery(query, *card_hash.values_at(:user_id, :card_id, :amount_per_sec, :level, :total_exp, :created_at, :updated_at))
-          card_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+          card_id = db.last_id
 
           UserCard.new(card_hash.merge(id: card_id))
         end
@@ -526,7 +526,7 @@ module Isuconquest
         }
         query = 'INSERT INTO user_decks(user_id, user_card_id_1, user_card_id_2, user_card_id_3, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
         db.xquery(query, *init_deck_hash.values_at(:user_id, :user_card_id_1, :user_card_id_2, :user_card_id_3, :created_at, :updated_at))
-        init_deck_id = db.xquery('SELECT LAST_INSERT_ID() as id').first.fetch(:id)
+        init_deck_id = db.last_id
 
         init_deck = UserDeck.new(init_deck_hash.merge(id: init_deck_id))
 
