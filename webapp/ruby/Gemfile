@@ -10,6 +10,7 @@ gem 'sinatra-contrib'
 gem 'bcrypt'
 gem 'rack-cors'
 gem 'ddtrace'
+gem 'activesupport'
 
 group :development do
   gem 'irb'
