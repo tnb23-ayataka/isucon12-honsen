@@ -29,3 +29,5 @@ mysql-slow.digest:
 
 service.restart:
 	sudo systemctl restart isuconquest.ruby
+service.log:
+	sudo journalctl -u isuconquest.ruby -f
