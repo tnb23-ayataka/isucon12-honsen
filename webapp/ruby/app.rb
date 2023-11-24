@@ -273,19 +273,20 @@ module Isuconquest
           user_present = UserPresent.new(user_present_hash.merge(id: user_present_id))
 
           # historyに入れる
-          present_history_id = generate_id()
+          # present_history_id = generate_id()
           history = UserPresentAllReceivedHistory.new(
-            id: present_history_id,
+            # id: present_history_id,
             user_id: user_id,
             present_all_id: normal_present.id,
             received_at: request_at,
             created_at: request_at,
             updated_at: request_at,
           )
-          query = 'INSERT INTO user_present_all_received_history(id, user_id, present_all_id, received_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+          # query = 'INSERT INTO user_present_all_received_history(id, user_id, present_all_id, received_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+          query = 'INSERT INTO user_present_all_received_history(user_id, present_all_id, received_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
           db.xquery(
             query,
-            history.id,
+            # history.id,
             history.user_id,
             history.present_all_id,
             history.received_at,
@@ -348,7 +349,7 @@ module Isuconquest
           query = 'SELECT * FROM user_items WHERE user_id=? AND item_id=?'
           user_item = db.xquery(query, user_id, item.fetch(:id)).first&.then { UserItem.new(_1) }
           if user_item.nil? # 新規作成
-            user_item_id = generate_id()
+            # user_item_id = generate_id()
             user_item_hash = {
               user_id: user_id,
               item_type: item.fetch(:item_type),
