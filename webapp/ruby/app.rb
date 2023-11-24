@@ -393,7 +393,7 @@ module Isuconquest
       end || Time.now).to_i
 
       # マスタ確認
-      master_version = db.query('SELECT * FROM version_masters WHERE status=1').first
+      master_version = db.query('SELECT * FROM version_masters WHERE status=1 limit 1').first
       unless master_version
         raise HttpError.new(404, 'active master version is not found')
       end
