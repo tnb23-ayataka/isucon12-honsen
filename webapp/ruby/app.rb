@@ -735,16 +735,30 @@ module Isuconquest
 
       # ガチャ排出アイテム取得
       gacha_data_list = []
-      query = 'SELECT * FROM gacha_item_masters WHERE gacha_id=? ORDER BY id ASC'
-      gacha_master_list.each do |v|
-        gacha_item = db.xquery(query, v.fetch(:id)).to_a
-        raise HttpError.new(404, 'not found gacha item') if gacha_item.empty?
+      gacha_item_ids = gacha_master_list.map do |ll|
+        ll.fetch(:id)
+      end
 
+      query = "SELECT * FROM gacha_item_masters WHERE gacha_id IN (#{gacha_item_ids.map {'?'}.join(',')}) ORDER BY id ASC"
+      gacha_item_list = db.xquery(query, *gacha_item_ids).to_a
+
+      gacha_master_list.each do |v|
         gacha_data_list.push(
           gacha: GachaMaster.new(v).as_json,
-          gachaItemList: gacha_item.map { GachaItemMaster.new(_1).as_json },
+          gachaItemList: gacha_item_list.map { GachaItemMaster.new(_1).as_json },
         )
       end
+
+      # query = 'SELECT * FROM gacha_item_masters WHERE gacha_id=? ORDER BY id ASC'
+      # gacha_master_list.each do |v|
+      #   gacha_item = db.xquery(query, v.fetch(:id)).to_a
+      #   raise HttpError.new(404, 'not found gacha item') if gacha_item.empty?
+
+      #   gacha_data_list.push(
+      #     gacha: GachaMaster.new(v).as_json,
+      #     gachaItemList: gacha_item.map { GachaItemMaster.new(_1).as_json },
+      #   )
+      # end
       # generate one time token
       query = 'UPDATE user_one_time_tokens SET deleted_at=? WHERE user_id=? AND deleted_at IS NULL'
       db.xquery(query, request_at, user_id)
